@@ -1,6 +1,7 @@
 import os
 import sys
 import typing as T
+from copy import deepcopy
 from enum import Enum
 
 obstacle = "#"
@@ -48,8 +49,13 @@ class Guard():
     def __init__(self, board: Board):
         self.board = board
         self.orientation = Orientation.UP
+        self.tail: T.List[T.List[T.List[str]]] = [[]]
+        self.cycles = 0
 
     def walk(self):
+        self.tail[0].append(deepcopy(self.board.guard_position))
+        if len(self.tail) == 4 and self.board.guard_position in self.tail[3]:
+            self.cycles += 1
         if self.orientation == Orientation.UP:
             self.board.move(0,-1)
         elif self.orientation == Orientation.DOWN:
@@ -60,6 +66,10 @@ class Guard():
             self.board.move(-1,0)
 
     def turn(self):
+        if len(self.tail) == 4:
+            self.tail.pop(3)
+        if len(self.tail) < 4:
+            self.tail.insert(0, [])
         if self.orientation == Orientation.UP:
             self.orientation = Orientation.RIGHT
         elif self.orientation == Orientation.DOWN:
@@ -99,13 +109,9 @@ board = Board(sys.argv[1])
 g = Guard(board)
 i = 0
 while g.next != None:
-    os.system('clear')
-    print(board)
-    if i%3==0:
-        import time;time.sleep(.1)
     if g.next == obstacle:
         g.turn()
     elif g.next in (empty, visited):
         g.walk()
     i += 1
-print(board.visited_count)
+print(g.cycles)
